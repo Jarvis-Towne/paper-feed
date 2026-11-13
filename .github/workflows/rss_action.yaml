@@ -5,6 +5,8 @@ on:
     - cron: '0 */6 * * *'  # 每6小时运行一次
   workflow_dispatch:      # 允许手动触发
   push:
+    branches:
+      - main
     paths:
       - '.github/workflows/rss_action.yaml'  # 配置修复时自动执行一次验证
 
@@ -41,6 +43,19 @@ jobs:
         RSS_KEYWORDS: ${{ secrets.RSS_KEYWORDS }}
       run: python get_RSS.py
 
+    - name: Publish RSS update
+      run: |
+        git config --global user.name 'github-actions[bot]'
+        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+        if [ -f filtered_feed.xml ]; then git add filtered_feed.xml; fi
+        if git diff --cached --quiet; then
+          echo "No RSS changes to commit"
+        else
+          git commit -m "Auto-update RSS feed"
+          git pull --rebase origin ${{ github.ref_name }}
+          git push origin HEAD:${{ github.ref_name }}
+        fi
+
     - name: Run AI Summary Script
       env:
         AI_SUMMARY_ENABLED: ${{ secrets.AI_SUMMARY_ENABLED }}
@@ -62,7 +77,7 @@ jobs:
         if git diff --cached --quiet; then
           echo "No changes to commit"
         else
-          git commit -m "Auto-update RSS feed"
+          git commit -m "Auto-update AI summary"
           git pull --rebase origin ${{ github.ref_name }}
           git push origin HEAD:${{ github.ref_name }}
         fi
