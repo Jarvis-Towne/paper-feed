@@ -594,6 +594,14 @@ def complete_with_retries(client, messages, label, config, rate_limiter, sleep_f
             except Exception as error:
                 last_error = error
                 print(f"AI {label} attempt {attempt_number}/{total_attempts} failed: {error}")
+                # Cloudflare error 1010 is an explicit block, not a transient rate limit.
+                # Avoid spending the entire retry budget while delaying RSS publishing.
+                error_text = str(error)
+                if "HTTP 403" in error_text and "error code: 1010" in error_text:
+                    raise RuntimeError(
+                        "AI endpoint rejected this runner (Cloudflare 1010); "
+                        "skipping further retries. RSS publishing will continue."
+                    ) from error
 
         if round_index < config.retry_rounds - 1:
             print(
