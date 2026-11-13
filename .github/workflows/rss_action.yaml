@@ -17,6 +17,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-24.04
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
     
     # 这一步非常重要：赋予脚本写入仓库的权限
     permissions:
@@ -52,7 +54,7 @@ jobs:
           echo "No RSS changes to commit"
         else
           git commit -m "Auto-update RSS feed"
-          git pull --rebase origin ${{ github.ref_name }}
+          git -c rebase.autoStash=true pull --rebase origin ${{ github.ref_name }}
           git push origin HEAD:${{ github.ref_name }}
         fi
 
@@ -78,6 +80,6 @@ jobs:
           echo "No changes to commit"
         else
           git commit -m "Auto-update AI summary"
-          git pull --rebase origin ${{ github.ref_name }}
+          git -c rebase.autoStash=true pull --rebase origin ${{ github.ref_name }}
           git push origin HEAD:${{ github.ref_name }}
         fi
